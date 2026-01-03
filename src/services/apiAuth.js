@@ -73,26 +73,64 @@ export async function updateCurrentUser({ password, fullName, avatar }) {
   if (error) throw new Error(error.message);
 
   //2. Upload the avatar image
+  ////// 2️⃣ No avatar update
   if (!avatar) return data;
 
-  const fileName = `avatar-${data.user.id}-${Math.random()}`;
+  // 3️⃣ RANDOM AVATAR IMAGE (URL string)
+  if (typeof avatar === "string") {
+    const { data: updatedUser, error } = await supabase.auth.updateUser({
+      data: { avatar },
+    });
 
-  const { error: storageError } = await supabase.storage
-    .from("avatars") //supabase avatars
-    .upload(fileName, avatar);
+    if (error) throw new Error(error.message);
+    return updatedUser;
+  }
 
-  if (storageError) throw new Error(storageError.message);
+  // 4️⃣ FILE UPLOAD
+  if (avatar instanceof File) {
+    const fileName = `avatar-${data.user.id}-${crypto.randomUUID()}`;
 
-  //3.Update avatar in the user
-  const { data: updatedUser, error: error2 } = await supabase.auth.updateUser({
-    data: {
-      avatar: `${supabaseUrl}/storage/v1/object/public/avatars/${fileName}`,
-    },
-  });
+    const { error: storageError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, avatar);
 
-  if (error2) throw new Error(error2.message);
+    if (storageError) throw new Error(storageError.message);
 
-  return updatedUser;
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${fileName}`;
+
+    const { data: updatedUser, error } = await supabase.auth.updateUser({
+      data: { avatar: publicUrl },
+    });
+
+    if (error) throw new Error(error.message);
+
+    return updatedUser;
+  }
+
+
+
+  //--------------------------NORMAL ONLY FILE UPLOAD AVATAR------------------------//
+  // const fileName = `avatar-${data.user.id}-${Math.random()}`;
+
+  // const { error: storageError } = await supabase.storage
+  //   .from("avatars") //supabase avatars
+  //   .upload(fileName, avatar);
+
+  // if (storageError) throw new Error(storageError.message);
+
+  // //3.Update avatar in the user
+  // const { data: updatedUser, error: error2 } = await supabase.auth.updateUser({
+  //   data: {
+  //     avatar: `${supabaseUrl}/storage/v1/object/public/avatars/${fileName}`,
+  //   },
+  // });
+
+  // if (error2) throw new Error(error2.message);
+
+  // return updatedUser;
+  ////////////////////////////////////////////////////////////////////////////////////
+
+
 }
 //New Policy---> For Full Customization -->Adding new policy to avatars
 //Allowed operation

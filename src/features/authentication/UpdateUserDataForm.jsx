@@ -18,30 +18,55 @@ function UpdateUserDataForm() {
     },
   } = useUser();
 
-  const {updateUser , isUpdating} = useUpdateUser();
+  const { updateUser, isUpdating } = useUpdateUser();
 
   const [fullName, setFullName] = useState(currentFullName);
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState(null);//One for uploaded file,
+  const [randomImageUrl, setRandomImageUrl] = useState("");//one for random image URL
+
+  //Random image generator function
+  function generateRandomImage() {
+    return `https://i.pravatar.cc/48?u=${crypto.randomUUID()}`;
+  }
+
+
+
 
   function handleSubmit(e) {
     e.preventDefault();
 
-    if(!fullName) return;
+    if (!fullName) return;
 
-    updateUser({fullName, avatar} , {
-      onSuccess: () => {
-        setAvatar(null);
-        e.target.reset();
+    //---------NORMAL FILE UPLOAD IMG-------//
+    // updateUser({ fullName, avatar }, {
+    //   onSuccess: () => {
+    //     setAvatar(null);
+    //     e.target.reset();
+    //   }
+    // });
+
+    updateUser(
+      {
+        fullName,
+        avatar: avatar ?? randomImageUrl, // ✅ FIX
+      },
+      {
+        onSuccess: () => {
+          setAvatar(null);
+          setRandomImageUrl("");
+          e.target.reset();
+        },
       }
-    });
+    );
   }
 
 
-  function handleCancel()
-  {
+  function handleCancel() {
     setFullName(currentFullName);
     setAvatar(null);
   }
+
+ 
 
   return (
     <Form onSubmit={handleSubmit}>
@@ -58,20 +83,49 @@ function UpdateUserDataForm() {
         />
       </FormRow>
 
-      <FormRow label="Avatar image">
+      {/* <FormRow label="Avatar image">
         <FileInput
           id="avatar"
           accept="image/*"
           onChange={(e) => setAvatar(e.target.files[0])}
-           disabled={isUpdating}
+          disabled={isUpdating}
         />
+      </FormRow> */}
+
+     {/* ✅ Step 3: Layout both buttons  Upload Image & RandomImage */}
+      <FormRow label="Avatar image">
+        <div  style={{display: "flex",alignItems: "center",gap: "12px",}}>
+          <FileInput
+            id="avatar"
+            accept="image/*"
+            onChange={(e) => {
+              setAvatar(e.target.files[0]);
+              setRandomImageUrl(""); // clear random image if file selected
+            }}
+            disabled={isUpdating}
+          />
+
+          <Button
+            type="button"
+            onClick={() => {
+              setRandomImageUrl(generateRandomImage());
+              setAvatar(null); // clear file if random selected
+            }}
+            disabled={isUpdating}
+          >
+            🎲 Random Image
+          </Button>
+
+       
+
+        </div>
       </FormRow>
 
       <FormRow>
-        <Button type="reset" variation="secondary"   disabled={isUpdating}  onClick={handleCancel}>
+        <Button type="reset" variation="secondary" disabled={isUpdating} onClick={handleCancel}>
           Cancel
         </Button>
-        <Button  disabled={isUpdating} >Update account</Button>
+        <Button disabled={isUpdating} >Update account</Button>
       </FormRow>
     </Form>
   );
